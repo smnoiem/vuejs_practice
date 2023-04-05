@@ -50,13 +50,22 @@ Vue.component('product', {
                     </ul>
                 </div>
 
-                <div>
-                    <h4>Description:</h4>
-                    <p>{{ description }}</p>
-                    <a v-show="showLink" :href="link">Go to Mediusware Home</a>
-                </div>
-
             </div>
+
+            <div>
+                <h2>Reviews</h2>
+                <p v-show="!reviews.length">There are no reviews yet.</p>
+                <ul>
+                    <li v-for="review in reviews">
+                        <p>{{review.name}}</p>
+                        <p>{{review.rating}}</p>
+                        <p>{{review.review}}</p>
+                        <p>{{ (review.recommended == true) ? 'Recommended' : 'Not Recommended' }}</p>
+                    </li>
+                </ul>
+            </div>
+
+            <product-review @review-submitted="addReview"></product-review>
 
         </div>
     `,
@@ -84,7 +93,8 @@ Vue.component('product', {
                 }
             ],
             sizes: ['S', 'L', 'XL', 'XXL'],
-            onSale: true
+            onSale: true,
+            reviews: []
         }
     },
     methods: {
@@ -96,6 +106,9 @@ Vue.component('product', {
         },
         updateProduct: function (index) {
             this.selectedVariant = index
+        },
+        addReview(productReview) {
+            this.reviews.push(productReview)
         }
     },
     computed: {
@@ -134,6 +147,90 @@ Vue.component('product-details', {
             </ul>
         </div>
     `,
+})
+
+Vue.component('product-review', {
+    props: {
+        //
+    },
+    template: `
+        <form class="review-form" @submit.prevent="onSubmit">
+
+            <p v-if="errors.length">
+                Please correct the following errors.
+                <ul>
+                    <li v-for="error in errors">{{error}}</li>
+                </ul>
+            </p>
+
+            <p>
+            <label for="name">Name:</label>
+            <input id="name" v-model="name" placeholder="name">
+            </p>
+            
+            <p>
+            <label for="review">Review:</label>      
+            <textarea id="review" v-model="review"></textarea>
+            </p>
+            
+            <p>
+            <label for="rating">Rating:</label>
+            <select id="rating" v-model.number="rating">
+                <option>5</option>
+                <option>4</option>
+                <option>3</option>
+                <option>2</option>
+                <option>1</option>
+            </select>
+            </p>
+
+            <p> Would you recommend this product? </p>
+            <input type="radio" name="recommended" v-model="recommended" value="1">Yes
+            <input type="radio" name="recommended" v-model="recommended" value="0">No
+                
+            <p>
+            <input type="submit" value="Submit">  
+            </p>
+        </form>
+    `,
+    data() {
+        return {
+            name: null,
+            review: null,
+            rating: null,
+            recommended: null,
+            errors: []
+        }
+    },
+    methods: {
+        onSubmit() {
+
+            this.errors = []
+
+            if(this.name && this.review && this.rating && this.recommended) 
+            {
+                let productReview = {
+                    name: this.name,
+                    review: this.review,
+                    rating: this.rating,
+                    recommended: this.recommended
+                }
+    
+                this.$emit('review-submitted', productReview)
+    
+                this.name = null
+                this.review = null
+                this.rating = null
+                this.recommended = null
+            }
+            else {
+                if(!this.name) this.errors.push('name required')
+                if(!this.review) this.errors.push('review required')
+                if(!this.rating) this.errors.push('rating required')
+                if(!this.recommended) this.errors.push('recommendation selection required')
+            }
+        }
+    }
 })
 
 let app = new Vue({
